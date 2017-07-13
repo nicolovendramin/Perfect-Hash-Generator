@@ -1,0 +1,5 @@
+Riscrivere il codice precedente tenendo conto che:
+I tre moduli da specificare saranno:
+1) modulo che produce il dizionario con i relativi casi di test
+2) modulo che prende in ingresso un dizionario di chiavi da file e calcola la tabella finale e la relativa tabella di disambiguazione
+3) modulo che prende in ingresso una tabella di hash, la sua tabella di disambiguazione e le relative dimensioni genera il codice c per poterle utilizzare

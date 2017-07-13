@@ -1,0 +1,46 @@
+I am writing this report to resume some empirical results deduced by the exectution of the different
+parts of the code that I wrote. In this folder are contained the results of the excution of a set of 
+tests randomically generated with different dimensions. For each dimension we tested 3 different sets
+of keys which were hashed in the perfect hash table using increasing percentages of loose:
+
+DIMENSION	LOOSE PERCENTAGE	NUMBER OF ERRORS (absolute)	ERROR PERCENTAGE	EXECUTION TIME
+100		20			0				0     %			<1s
+100		24			0				0     %			<1s
+100		30			0				0     %			<1s
+
+500		20			1				0.2   %			<1s
+500		24			1				0.2   %			<1s
+500		30			2				0.4   %			<1s
+
+1000		20			0				0     %			<1s
+1000		24			1				0.1   %			<1s
+1000		30			0				0     %			<1s
+
+2500		20			7				0.28  %			<1s
+2500		24			2				0.08  %			<2s
+2500		30			6				0.24  %			<1s
+
+5000		20			22				0.44  %			<1s
+5000		24			12				0.24  %			<2s
+5000		30			12				0.24  %			<2s
+
+10000		20			29				0.29  %			<4s
+10000		24			13				0.13  %			<2s
+10000		30			16				0.16  %			<2s
+
+20000		20			40				0.2   %			<5s
+20000		24			41				0.205 %			<4s
+20000		30			44				0.22  %			<3s
+
+50000		20			78				0.156 %			<19s
+50000		24			76				0.15  %			<7s
+50000		30			89				0.178 %			<4s
+
+100000		20			177				0.177 %			<40s
+100000		24			172				0.172 %			<15s
+100000		30			150				0.15  %			<7s
+
+The number and percentage of error is just linked to the fact that some keys are equals and for this 
+reason they cause an intrinsecal collison. In the specific contest in which the tool has to be adapted
+we will not have to face this problem since all the keys to be hashed for the lookUp will be unique.
+

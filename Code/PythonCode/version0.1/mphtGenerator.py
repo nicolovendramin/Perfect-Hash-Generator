@@ -1,0 +1,120 @@
+#This module is the real generator. Must be called with the descriptor of the FILE containing the dictionary as input or it will try to access a local file called "dictionary.txt"
+import sys
+import codePrinter
+import dictionary
+import ctypes
+
+#This instruction sets the source to the generated dictionary
+numericDictionary = dictionary.dictionary
+#This sets the percentage of loose in the table dimension
+perc = 20
+
+#Checks if a different loose is given as input. If not ensures the user knows the default value
+if(len(sys.argv)!= 2) :
+	print("WARNING: calling this with no options means that default option for disambiguationTable dimension is chosen. [default is 20% of the size of table]")
+if(len(sys.argv)==2) : 
+	perc = sys.argv[1]
+if len(numericDictionary)<100 and int(perc) < 100:
+	perc = "100"
+	print("fatto")
+#Establishes the table dimension given the lenght of the dictionary and the loose percentage
+Dsize = int((int(perc)*len(numericDictionary))/100)
+
+#This function is the one which actually provides the hasing. It is called with 0 as iteration for the hashing in the disambiguation table
+def HashFunction(iteration, values):
+	"We use the same function for the first and second hashing. Hashing is realized calling HashFunction(disambiguationTable[HashFunction(0,value)%Dsize],value). (We use the FNV algorithm"
+	if iteration == 0 : iteration = 0x01000193
+	
+	for value in values : 
+		iteration = ((iteration * 0x01000193) ^ int(value) ) & 0xffffffff
+		
+	return iteration
+
+#This is the same as above, but is made when the input is a single int and not a tuple
+def HashFunctionInt(iteration, key):
+	""
+	if iteration == 0 : iteration = 0x01000193
+
+	iteration = ((iteration * 0x01000193) ^ key ) & 0xffffffff
+	return iteration
+
+#This function places all the keys into folders. After that it starts from the biggest folder up to the smaller ones
+#to find the right iteration number necessary to ensure that all the keys of the folder goes into different and free
+#slots of the final table. When just 1-sized folders remain the function places them in the first free slot and stores
+#in the disambiguation table the opposite of the number of the slot in which they are stored. 
+def PerfectHash( dictionary ) :
+	"This is the function which performs the creation of the Perfect Hashing"
+	size = len(dictionary)
+	folders = []
+	# At first we call the hash function on all the values to check which keys would collide in the disambiguationTable
+	for i in range (Dsize):
+		folders.append( [] )
+	disambiguationTable = [0] * Dsize
+	table = [None] * size
+   
+	for key in dictionary.keys():		
+		if(isinstance(key,int)) : folders[HashFunctionInt(0,key)%Dsize].append(key)
+		else : folders[HashFunction(0, list(key))%Dsize].append(key)
+
+	# After having classified the keys in 'collision folders' we sort those folders from the longest to the shortest and process them in this order
+	folders.sort( key=len, reverse=True )        
+   
+	# We process in this way just the folders with more than one element
+	for f in xrange( Dsize ):
+		folder = folders[f]
+		if len(folder) <= 1: break
+        
+		iteration = 1
+		item = 0
+		slots = []
+
+		# Here is the 'brute force' aspect of the algorithm : we try to increase step by step the iteration number until we find 
+		# one which places all the elements of the current folder into free slots of the final table
+		while item < len(folder):
+			if(isinstance(folder[item],int)): slot = HashFunctionInt(iteration,folder[item]) % size
+			else :	slot = HashFunction( iteration, folder[item] ) % size
+			if table[slot] != None or slot in slots:
+				iteration += 1
+				item = 0
+				slots = []
+			else:
+				slots.append( slot )
+				item += 1
+
+	# We just put the correct values into the table and the disambiguation table
+		if(isinstance(folder[0],int)) : disambiguationTable[HashFunctionInt(0,folder[0]) % Dsize] = iteration
+		else : disambiguationTable[HashFunction(0, folder[0]) % Dsize] = iteration
+		for i in range(len(folder)):
+			table[slots[i]] = dictionary[folder[i]]
+
+	# Now we quickly process the remaining folders which just contains 1 item. We do that by placing them in the first free slot of the table
+	# and saving in the disambiguation set the opposite of the 'offset'-1 to be sure that we have a negative number in any possible case
+	freelist = []
+	for i in xrange(size): 
+		if table[i] == None: freelist.append( i )
+	if(len(freelist)!=0):
+		for f in xrange( f, Dsize ):
+			folder = folders[f]
+			if len(folder) == 0: break
+			slot = freelist.pop()
+			if(isinstance(folder[0],int)) : disambiguationTable[HashFunctionInt(0,folder[0])%Dsize] = -slot-1
+			else : disambiguationTable[HashFunction(0, folder[0]) % Dsize] = -slot-1 
+			table[slot] = dictionary[folder[0]]
+
+# and Finally we can conclude returning the Tuple composed by the 2 Tables
+	return (disambiguationTable, table) 
+	
+
+#This final piece of code just tests if all the values of the dictionary have been correctly hashed in the table.
+#If some error is encountered in this process it will be written ERROR on the system out for each mishashed key
+(disambiguationTable,table) = PerfectHash(numericDictionary)
+for i in numericDictionary.keys():
+	if(isinstance(i,int)) : d =disambiguationTable[ HashFunctionInt(0,i)%Dsize]
+	else : d =disambiguationTable[ HashFunction(0,i)%Dsize]
+	if(d<0) : r = table[-d-1]
+	elif (isinstance(i,int)): r = table[HashFunctionInt(d,i)%len(table)]
+	else : r = table[HashFunction(d,i)%len(table)]
+	if r != numericDictionary[i] : print("ERROR")
+codePrinter.printAll(disambiguationTable,table,Dsize,len(numericDictionary))
+
+
